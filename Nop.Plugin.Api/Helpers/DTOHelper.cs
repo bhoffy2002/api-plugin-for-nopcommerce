@@ -29,6 +29,8 @@ using Nop.Services.Stores;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nop.Plugin.Api.DTOs.Shipments;
+using Nop.Plugin.Api.DTOs.ShipmentItems;
 
 namespace Nop.Plugin.Api.Helpers
 {
@@ -428,6 +430,30 @@ namespace Nop.Plugin.Api.Helpers
             }
 
             return manufacturerDto;
+        }
+
+        public ShipmentDto PrepareShipmentDTO(Shipment shipment)
+        {
+            var shipmentDto = shipment.ToDto();
+
+            shipmentDto.ShipmentItems = shipment.ShipmentItems.Select(PrepareShipmentItemDTO).ToList();
+
+            var orderDto = _orderApiService.GetOrderById(shipment.OrderId);
+
+            if (orderDto != null)
+            {
+                shipmentDto.Order = orderDto.ToOrderDto();
+            }
+
+            return shipmentDto;
+        }
+
+        public ShipmentItemDto PrepareShipmentItemDTO(ShipmentItem shipmentItem)
+        {
+            var dto = shipmentItem.ToDto();
+            dto.OrderItem = PrepareOrderItemDTO(shipmentItem.Order);
+            dto.Shipment = PrepareShipmentDTO(shipmentItem.Shipment);
+            return dto;
         }
     }
 }
