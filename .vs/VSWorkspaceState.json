@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\Nop.Plugin.Api",
+    "\\Nop.Plugin.Api\\Infrastructure",
+    "\\Nop.Plugin.Api\\Models",
+    "\\Nop.Plugin.Api\\Models\\OrderItemsParameters",
+    "\\Nop.Plugin.Api\\Models\\OrdersParameters",
+    "\\Nop.Plugin.Api\\Models\\ShipmentsParameters",
+    "\\Nop.Plugin.Api\\Services"
+  ],
+  "PreviewInSolutionExplorer": false
+}
