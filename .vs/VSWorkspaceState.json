@@ -2,6 +2,8 @@
   "ExpandedNodes": [
     "",
     "\\Nop.Plugin.Api",
+    "\\Nop.Plugin.Api\\DTOs\\OrderItems",
+    "\\Nop.Plugin.Api\\DTOs\\ShipmentItems",
     "\\Nop.Plugin.Api\\Infrastructure",
     "\\Nop.Plugin.Api\\Models",
     "\\Nop.Plugin.Api\\Models\\OrderItemsParameters",
@@ -9,5 +11,6 @@
     "\\Nop.Plugin.Api\\Models\\ShipmentsParameters",
     "\\Nop.Plugin.Api\\Services"
   ],
+  "SelectedNode": "\\Nop.Plugin.Api\\Services\\IOrderItemApiService.cs",
   "PreviewInSolutionExplorer": false
 }

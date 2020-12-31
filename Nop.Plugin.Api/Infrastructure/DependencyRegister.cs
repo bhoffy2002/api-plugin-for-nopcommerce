@@ -50,6 +50,8 @@ namespace Nop.Plugin.Api.Infrastructure
             builder.RegisterType<OrderApiService>().As<IOrderApiService>().InstancePerLifetimeScope();
             builder.RegisterType<ShoppingCartItemApiService>().As<IShoppingCartItemApiService>().InstancePerLifetimeScope();
             builder.RegisterType<OrderItemApiService>().As<IOrderItemApiService>().InstancePerLifetimeScope();
+            builder.RegisterType<ShipmentApiService>().As<IShipmentApiService>().InstancePerLifetimeScope();
+            builder.RegisterType<ShipmentItemApiService>().As<IShipmentItemApiService>().InstancePerLifetimeScope();
             builder.RegisterType<ProductAttributesApiService>().As<IProductAttributesApiService>().InstancePerLifetimeScope();
             builder.RegisterType<ProductPictureService>().As<IProductPictureService>().InstancePerLifetimeScope();
             builder.RegisterType<ProductAttributeConverter>().As<IProductAttributeConverter>().InstancePerLifetimeScope();
@@ -83,6 +85,7 @@ namespace Nop.Plugin.Api.Infrastructure
             builder.RegisterType<OrderFactory>().As<IFactory<Order>>().InstancePerLifetimeScope();
             builder.RegisterType<ShoppingCartItemFactory>().As<IFactory<ShoppingCartItem>>().InstancePerLifetimeScope();
             builder.RegisterType<ManufacturerFactory>().As<IFactory<Manufacturer>>().InstancePerLifetimeScope();
+            builder.RegisterType<ShipmentFactory>().As<IFactory<Shipment>>().InstancePerLifetimeScope();
 
             builder.RegisterType<Maps.JsonPropertyMapper>().As<Maps.IJsonPropertyMapper>().InstancePerLifetimeScope();
 

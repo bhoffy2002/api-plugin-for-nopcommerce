@@ -7,6 +7,8 @@ using Nop.Plugin.Api.DTOs.Languages;
 using Nop.Plugin.Api.DTOs.Manufacturers;
 using Nop.Plugin.Api.DTOs.OrderItems;
 using Nop.Plugin.Api.DTOs.Orders;
+using Nop.Plugin.Api.DTOs.ShipmentItems;
+using Nop.Plugin.Api.DTOs.Shipments;
 using Nop.Plugin.Api.DTOs.ProductAttributes;
 using Nop.Plugin.Api.DTOs.Products;
 using Nop.Plugin.Api.DTOs.ShoppingCarts;
@@ -22,6 +24,8 @@ namespace Nop.Plugin.Api.Helpers
         OrderDto PrepareOrderDTO(Order order);
         ShoppingCartItemDto PrepareShoppingCartItemDTO(ShoppingCartItem shoppingCartItem);
         OrderItemDto PrepareOrderItemDTO(OrderItem orderItem);
+        ShipmentDto PrepareShipmentDTO(Shipment shipment);
+        ShipmentItemDto PrepareShipmentItemDTO(ShipmentItem shipmentItem);
         StoreDto PrepareStoreDTO(Store store);
         LanguageDto PrepateLanguageDto(Language language);
         ProductAttributeDto PrepareProductAttributeDTO(ProductAttribute productAttribute);
