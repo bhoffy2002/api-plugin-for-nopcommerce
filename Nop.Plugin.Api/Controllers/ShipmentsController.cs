@@ -4,15 +4,15 @@ using System.Linq;
 using System.Net;
 using Nop.Core;
 using Nop.Core.Domain.Customers;
-using Nop.Core.Domain.Order;
-using Nop.Core.Domain.Shipments;
+using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Shipping;
 using Nop.Core.Infrastructure;
 using Nop.Plugin.Api.Attributes;
 using Nop.Plugin.Api.Constants;
 using Nop.Plugin.Api.Delta;
 using Nop.Plugin.Api.DTOs;
 using Nop.Plugin.Api.DTOs.OrderItems;
-using Nop.Plugin.Api.DTOs.shipments;
+using Nop.Plugin.Api.DTOs.Shipments;
 using Nop.Plugin.Api.Factories;
 using Nop.Plugin.Api.Helpers;
 using Nop.Plugin.Api.JSON.ActionResults;
@@ -27,12 +27,13 @@ using Nop.Services.Discounts;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Media;
-using Nop.Services.shipments;
+using Nop.Services.Shipping;
 using Nop.Services.Payments;
 using Nop.Services.Security;
-using Nop.Services.Shipping;
 using Nop.Services.Stores;
 using Microsoft.AspNetCore.Mvc;
+using Nop.Plugin.Api.Models.ShipmentsParameters;
+using Nop.Services.Orders;
 
 namespace Nop.Plugin.Api.Controllers
 {
@@ -47,7 +48,6 @@ namespace Nop.Plugin.Api.Controllers
         private readonly IProductService _productService;
         private readonly IOrderProcessingService _orderProcessingService;
         private readonly IOrderService _orderService;
-        private readonly IShipmentProcessingService _shipmentProcessingService;
         private readonly IShipmentService _shipmentService;
         private readonly IShoppingCartService _shoppingCartService;
         private readonly IGenericAttributeService _genericAttributeService;
@@ -55,13 +55,13 @@ namespace Nop.Plugin.Api.Controllers
         private readonly IDTOHelper _dtoHelper;        
         private readonly IProductAttributeConverter _productAttributeConverter;
         private readonly IStoreContext _storeContext;
-        private readonly IFactory<Order> _factory;
+        private readonly IFactory<Shipment> _factory;
 
         // We resolve the order settings this way because of the tests.
         // The auto mocking does not support concreate types as dependencies. It supports only interfaces.
-        private ShipmentSettings _shipmentSettings;
+        private ShippingSettings _shipmentSettings;
 
-        private ShipmentSettings ShipmentSettings => _shipmentSettings ?? (_shipmentSettings = EngineContext.Current.Resolve<ShipmentSettings>());
+        private ShippingSettings ShippingSettings => _shipmentSettings ?? (_shipmentSettings = EngineContext.Current.Resolve<ShippingSettings>());
 
         public ShipmentsController(IShipmentApiService shipmentApiService,
             IJsonFieldsSerializer jsonFieldsSerializer,
@@ -73,10 +73,9 @@ namespace Nop.Plugin.Api.Controllers
             ICustomerActivityService customerActivityService,
             ILocalizationService localizationService,
             IProductService productService,
-            IFactory<Order> factory,
+            IFactory<Shipment> factory,
             IOrderProcessingService orderProcessingService,
             IOrderService orderService,
-            IShipmentProcessingService shipmentProcessingService,
             IShipmentService shipmentService,
             IShoppingCartService shoppingCartService,
             IGenericAttributeService genericAttributeService,
@@ -92,7 +91,6 @@ namespace Nop.Plugin.Api.Controllers
             _factory = factory;
             _orderProcessingService = orderProcessingService;
             _orderService = orderService;
-            _shipmentProcessingService = shipmentProcessingService;
             _shipmentService = shipmentService;
             _shoppingCartService = shoppingCartService;
             _genericAttributeService = genericAttributeService;
@@ -132,14 +130,13 @@ namespace Nop.Plugin.Api.Controllers
             var shipments = _shipmentApiService.GetShipments(parameters.Ids, parameters.CreatedAtMin,
                 parameters.CreatedAtMax,
                 parameters.Limit, parameters.Page, parameters.SinceId,
-                parameters.Status, parameters.PaymentStatus, parameters.ShippingStatus,
-                parameters.orderId, storeId);
+                parameters.OrderId, storeId);
 
             IList<ShipmentDto> shipmentsAsDtos = shipments.Select(x => _dtoHelper.PrepareShipmentDTO(x)).ToList();
 
             var ShipmentsRootObject = new ShipmentsRootObject()
             {
-                shipments = shipmentsAsDtos
+                Shipments = shipmentsAsDtos
             };
 
             var json = JsonFieldsSerializer.Serialize(ShipmentsRootObject, parameters.Fields);
@@ -162,15 +159,14 @@ namespace Nop.Plugin.Api.Controllers
         {
             var storeId = _storeContext.CurrentStore.Id;
 
-            var shipmentsCount = _shipmentApiService.GetShipmentsCount(parameters.CreatedAtMin, parameters.CreatedAtMax, parameters.Status,
-                                                              parameters.PaymentStatus, parameters.ShippingStatus, parameters.orderId, storeId);
+            var shipmentsCount = _shipmentApiService.GetShipmentsCount(parameters.CreatedAtMin, parameters.CreatedAtMax, parameters.OrderId, storeId);
 
-            var ShipmentsCountRootObject = new ShipmentsCountRootObject()
+            var shipmentsCountRootObject = new ShipmentsCountRootObject()
             {
                 Count = shipmentsCount
             };
 
-            return Ok(ShipmentsCountRootObject);
+            return Ok(shipmentsCountRootObject);
         }
 
         /// <summary>
@@ -202,12 +198,12 @@ namespace Nop.Plugin.Api.Controllers
                 return Error(HttpStatusCode.NotFound, "shipment", "not found");
             }
 
-            var ShipmentsRootObject = new ShipmentsRootObject();
+            var shipmentsRootObject = new ShipmentsRootObject();
 
-            var ShipmentDto = _dtoHelper.PrepareShipmentDTO(shipment);
-            ShipmentsRootObject.shipments.Add(ShipmentDto);
+            var shipmentDto = _dtoHelper.PrepareShipmentDTO(shipment);
+            shipmentsRootObject.Shipments.Add(shipmentDto);
 
-            var json = JsonFieldsSerializer.Serialize(ShipmentsRootObject, fields);
+            var json = JsonFieldsSerializer.Serialize(shipmentsRootObject, fields);
 
             return new RawJsonActionResult(json);
         }
@@ -225,14 +221,14 @@ namespace Nop.Plugin.Api.Controllers
         [GetRequestsErrorInterceptorActionFilter]
         public IActionResult GetShipmentsByOrderId(int orderId)
         {
-            IList<ShipmentDto> ordersForCustomer = _shipmentApiService.GetShipmentsByOrderId(orderId).Select(x => _dtoHelper.PrepareOrderDTO(x)).ToList();
+            IList<ShipmentDto> shipmentsForOrder = _shipmentApiService.GetShipmentsByOrderId(orderId).Select(x => _dtoHelper.PrepareShipmentDTO(x)).ToList();
 
-            var ShipmentsRootObject = new ShipmentsRootObject()
+            var shipmentsRootObject = new ShipmentsRootObject()
             {
-                shipments = ordersForCustomer
+                Shipments = shipmentsForOrder
             };
 
-            return Ok(ShipmentsRootObject);
+            return Ok(shipmentsRootObject);
         }
 
         [HttpPost]
@@ -250,31 +246,31 @@ namespace Nop.Plugin.Api.Controllers
                 return Error();
             }
 
-            if (shipmentDelta.Dto.orderId == null)
-            {
-                return Error();
-            }
+            //if (shipmentDelta.Dto.OrderId == null)
+            //{
+            //    return Error();
+            //}
 
             // We doesn't have to check for value because this is done by the shipment validator.
-            var order = OrderService.GetOrderById(shipmentDelta.Dto.orderId.Value);
+            var order = _orderService.GetOrderById(shipmentDelta.Dto.OrderId);
             
             if (order == null)
             {
                 return Error(HttpStatusCode.NotFound, "order", "not found");
             }
 
-            var shippingRequired = false;
+            //var shippingRequired = false;
 
-            if (shipmentDelta.Dto.ShipmentItems != null)
-            {
-                var shouldReturnError = AddShipmentItemsToShipment(shipmentDelta.Dto.ShipmentItems, order, shipmentDelta.Dto.StoreId ?? _storeContext.CurrentStore.Id);
-                if (shouldReturnError)
-                {
-                    return Error(HttpStatusCode.BadRequest);
-                }
+            //if (shipmentDelta.Dto.ShipmentItems != null)
+            //{
+            //    var shouldReturnError = AddShipmentItemsToShipment(shipmentDelta.Dto.ShipmentItems, order, shipmentDelta.Dto.StoreId ?? _storeContext.CurrentStore.Id);
+            //    if (shouldReturnError)
+            //    {
+            //        return Error(HttpStatusCode.BadRequest);
+            //    }
 
-                //shippingRequired = IsShippingAddressRequired(shipmentDelta.Dto.ShipmentItems);
-            }
+            //    //shippingRequired = IsShippingAddressRequired(shipmentDelta.Dto.ShipmentItems);
+            //}
 
             //if (shippingRequired)
             //{
@@ -302,12 +298,14 @@ namespace Nop.Plugin.Api.Controllers
 
             newShipment.Order = order;
 
-            // The default value will be the currentStore.id, but if it isn't passed in the json we need to set it by hand.
-            if (!shipmentDelta.Dto.StoreId.HasValue)
-            {
-                newShipment.StoreId = _storeContext.CurrentStore.Id;
-            }
-            
+            //// The default value will be the currentStore.id, but if it isn't passed in the json we need to set it by hand.
+            //if (!shipmentDelta.Dto.StoreId.HasValue)
+            //{
+            //    newShipment.StoreId = _storeContext.CurrentStore.Id;
+            //}
+
+            var shipmentDto = _dtoHelper.PrepareShipmentDTO(newShipment);
+
             //var placeOrderResult = PlaceOrder(newShipment, customer);
 
             //if (!placeOrderResult.Success)
@@ -320,16 +318,16 @@ namespace Nop.Plugin.Api.Controllers
             //    return Error(HttpStatusCode.BadRequest);
             //}
 
-            OrderActivityService.InsertActivity("AddNewShipment",
-                 LocalizationService.GetResource("ActivityLog.AddNewShipment"), newShipment);
+            //OrderActivityService.InsertActivity("AddNewShipment",
+            //     LocalizationService.GetResource("ActivityLog.AddNewShipment"), newShipment);
 
-            var ShipmentsRootObject = new ShipmentsRootObject();
+            var shipmentsRootObject = new ShipmentsRootObject();
 
             //var placedOrderDto = _dtoHelper.PrepareOrderDTO(placeOrderResult.PlacedOrder);
 
-            ShipmentsRootObject.shipments.Add(newShipment);
+            shipmentsRootObject.Shipments.Add(shipmentDto);
 
-            var json = JsonFieldsSerializer.Serialize(ShipmentsRootObject, string.Empty);
+            var json = JsonFieldsSerializer.Serialize(shipmentsRootObject, string.Empty);
 
             return new RawJsonActionResult(json);
         }
@@ -356,10 +354,10 @@ namespace Nop.Plugin.Api.Controllers
                 return Error(HttpStatusCode.NotFound, "shipment", "not found");
             }
 
-            _shipmentProcessingService.DeleteShipment(shipmentToDelete);
+            _shipmentService.DeleteShipment(shipmentToDelete);
 
-            //activity log
-            OrderActivityService.InsertActivity("DeleteShipment", LocalizationService.GetResource("ActivityLog.DeleteShipment"), shipmentToDelete);
+            ////activity log
+            //OrderActivityService.InsertActivity("DeleteShipment", LocalizationService.GetResource("ActivityLog.DeleteShipment"), shipmentToDelete);
 
             return new RawJsonActionResult("{}");
         }
@@ -422,17 +420,17 @@ namespace Nop.Plugin.Api.Controllers
 
             _shipmentService.UpdateShipment(currentShipment);
 
-            OrderActivityService.InsertActivity("UpdateShipment",
-                 LocalizationService.GetResource("ActivityLog.UpdateShipment"), currentShipment);
+            //OrderActivityService.InsertActivity("UpdateShipment",
+            //     LocalizationService.GetResource("ActivityLog.UpdateShipment"), currentShipment);
 
-            var ShipmentsRootObject = new ShipmentsRootObject();
+            var shipmentsRootObject = new ShipmentsRootObject();
 
             var placedShipmentDto = _dtoHelper.PrepareShipmentDTO(currentShipment);
             //placedShipmentDto.ShippingMethod = shipmentDelta.Dto.ShippingMethod;
 
-            ShipmentsRootObject.shipments.Add(placedShipmentDto);
+            shipmentsRootObject.Shipments.Add(placedShipmentDto);
 
-            var json = JsonFieldsSerializer.Serialize(ShipmentsRootObject, string.Empty);
+            var json = JsonFieldsSerializer.Serialize(shipmentsRootObject, string.Empty);
 
             return new RawJsonActionResult(json);
         }

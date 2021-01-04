@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Shipping;
 
 namespace Nop.Plugin.Api.Services
 {

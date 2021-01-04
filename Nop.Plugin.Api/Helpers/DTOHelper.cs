@@ -29,6 +29,8 @@ using Nop.Services.Stores;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nop.Core.Domain.Shipping;
+using Nop.Plugin.Api.DTOs.ShipmentItem;
 using Nop.Plugin.Api.DTOs.Shipments;
 using Nop.Plugin.Api.DTOs.ShipmentItems;
 
@@ -50,6 +52,8 @@ namespace Nop.Plugin.Api.Helpers
         private readonly IStoreMappingService _storeMappingService;
         private readonly IStoreService _storeService;
         private readonly IUrlRecordService _urlRecordService;
+        private readonly IOrderApiService _orderApiService;
+
 
         public DTOHelper(IProductService productService,
             IAclService aclService,
@@ -64,7 +68,8 @@ namespace Nop.Plugin.Api.Helpers
             IStoreService storeService,
             ILocalizationService localizationService,
             IUrlRecordService urlRecordService,
-            IProductTagService productTagService)
+            IProductTagService productTagService,
+            IOrderApiService orderApiService)
         {
             _productService = productService;
             _aclService = aclService;
@@ -80,6 +85,7 @@ namespace Nop.Plugin.Api.Helpers
             _localizationService = localizationService;
             _urlRecordService = urlRecordService;
             _productTagService = productTagService;
+            _orderApiService = orderApiService;
         }
 
         public ProductDto PrepareProductDTO(Product product)
@@ -440,10 +446,10 @@ namespace Nop.Plugin.Api.Helpers
 
             var orderDto = _orderApiService.GetOrderById(shipment.OrderId);
 
-            if (orderDto != null)
-            {
-                shipmentDto.Order = orderDto.ToOrderDto();
-            }
+            //if (orderDto != null)
+            //{
+            //    shipmentDto.Order = orderDto.ToOrderDto();
+            //}
 
             return shipmentDto;
         }
@@ -451,7 +457,10 @@ namespace Nop.Plugin.Api.Helpers
         public ShipmentItemDto PrepareShipmentItemDTO(ShipmentItem shipmentItem)
         {
             var dto = shipmentItem.ToDto();
-            dto.OrderItem = PrepareOrderItemDTO(shipmentItem.Order);
+
+            var order = _orderApiService.GetOrderById(shipmentItem.Shipment.OrderId);
+
+            dto.OrderItem = order.OrderItems.SingleOrDefault(x => x.Id == shipmentItem.OrderItemId);
             dto.Shipment = PrepareShipmentDTO(shipmentItem.Shipment);
             return dto;
         }

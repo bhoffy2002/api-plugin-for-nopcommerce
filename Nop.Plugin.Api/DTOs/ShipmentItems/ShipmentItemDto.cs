@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Nop.Core.Domain.Orders;
+using Nop.Plugin.Api.Attributes;
 using Nop.Plugin.Api.DTOs.Base;
 using Nop.Plugin.Api.DTOs.Shipments;
 using Nop.Plugin.Api.Validators;

@@ -6,11 +6,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Domain.Shipments;
+using Nop.Core.Domain.Shipping;
 using Nop.Plugin.Api.Attributes;
 using Nop.Plugin.Api.Constants;
 using Nop.Plugin.Api.Delta;
 using Nop.Plugin.Api.DTOs.Errors;
+using Nop.Plugin.Api.DTOs.ShipmentItem;
 using Nop.Plugin.Api.DTOs.ShipmentItems;
 using Nop.Plugin.Api.Helpers;
 using Nop.Plugin.Api.JSON.ActionResults;
@@ -18,6 +19,7 @@ using Nop.Plugin.Api.JSON.Serializers;
 using Nop.Plugin.Api.MappingExtensions;
 using Nop.Plugin.Api.ModelBinders;
 using Nop.Plugin.Api.Models.OrderItemsParameters;
+using Nop.Plugin.Api.Models.ShipmentItemsParameters;
 using Nop.Plugin.Api.Services;
 using Nop.Services.Catalog;
 using Nop.Services.Customers;
@@ -27,6 +29,7 @@ using Nop.Services.Logging;
 using Nop.Services.Media;
 using Nop.Services.Orders;
 using Nop.Services.Security;
+using Nop.Services.Shipping;
 using Nop.Services.Stores;
 using Nop.Services.Tax;
 
@@ -212,11 +215,17 @@ namespace Nop.Plugin.Api.Controllers
                 return Error(HttpStatusCode.NotFound, "shipment", "not found");
             }
 
-            var product = GetProduct(shipmentItemDelta.Dto.ProductId);
-
-            if (product == null)
+            var order = GetOrder(shipment.OrderId);
+            if(order == null)
             {
-                return Error(HttpStatusCode.NotFound, "product", "not found");
+                return Error(HttpStatusCode.NotFound, "order", "not found");
+            }
+
+            var orderItem = GetOrderItem(order, shipmentItemDelta.Dto.OrderItemId);
+
+            if (orderItem == null)
+            {
+                return Error(HttpStatusCode.NotFound, "orderItem", "not found");
             }
 
             //if (product.IsRental)
@@ -243,15 +252,15 @@ namespace Nop.Plugin.Api.Controllers
             //    }
             //}
 
-            var newShipmentItem = PrepareDefaultShipmentItemFromProduct(shipment, product);
+            var newShipmentItem = PrepareDefaultShipmentItemFromProduct(shipment, orderItem);
             shipmentItemDelta.Merge(newShipmentItem);
 
             shipment.ShipmentItems.Add(newShipmentItem);
 
             _shipmentService.UpdateShipment(shipment);
 
-            OrderActivityService.InsertActivity("AddNewOrderItem",
-                LocalizationService.GetResource("ActivityLog.AddNewOrderItem"), newShipmentItem);
+            //OrderActivityService.InsertActivity("AddNewOrderItem",
+            //    LocalizationService.GetResource("ActivityLog.AddNewOrderItem"), newShipmentItem);
 
             var shipmentItemsRootObject = new ShipmentItemsRootObject();
 
@@ -279,9 +288,9 @@ namespace Nop.Plugin.Api.Controllers
                 return Error();
             }
 
-            var ShipmentItemToUpdate = _shipmentService.GetShipmentItemById(shipmentItemId);
+            var shipmentItemToUpdate = _shipmentService.GetShipmentItemById(shipmentItemId);
 
-            if (ShipmentItemToUpdate == null)
+            if (shipmentItemToUpdate == null)
             {
                 return Error(HttpStatusCode.NotFound, "shipment_item", "not found");
             }
@@ -293,25 +302,25 @@ namespace Nop.Plugin.Api.Controllers
                 return Error(HttpStatusCode.NotFound, "shipment", "not found");
             }
 
-            // This is needed because those fields shouldn't be updatable. That is why we save them and after the merge set them back.
-            int? productId = ShipmentItemToUpdate.ProductId;
-            //var rentalStartDate = ShipmentItemToUpdate.RentalStartDateUtc;
-            //var rentalEndDate = ShipmentItemToUpdate.RentalEndDateUtc;
+            //// This is needed because those fields shouldn't be updatable. That is why we save them and after the merge set them back.
+            //int? productId = shipmentItemToUpdate.ProductId;
+            ////var rentalStartDate = ShipmentItemToUpdate.RentalStartDateUtc;
+            ////var rentalEndDate = ShipmentItemToUpdate.RentalEndDateUtc;
 
-            shipmentItemDelta.Merge(ShipmentItemToUpdate);
+            shipmentItemDelta.Merge(shipmentItemToUpdate);
 
-            ShipmentItemToUpdate.ProductId = (int) productId;
+            //shipmentItemToUpdate.ProductId = (int) productId;
             //ShipmentItemToUpdate.RentalStartDateUtc = rentalStartDate;
             //ShipmentItemToUpdate.RentalEndDateUtc = rentalEndDate;
 
             _shipmentService.UpdateShipment(shipment);
 
-            OrderActivityService.InsertActivity("UpdateShipmentItem",
-                LocalizationService.GetResource("ActivityLog.UpdateShipmentItem"), ShipmentItemToUpdate);
+            //OrderActivityService.InsertActivity("UpdateShipmentItem",
+            //    LocalizationService.GetResource("ActivityLog.UpdateShipmentItem"), ShipmentItemToUpdate);
 
             var shipmentItemsRootObject = new ShipmentItemsRootObject();
 
-            shipmentItemsRootObject.ShipmentItems.Add(ShipmentItemToUpdate.ToDto());
+            shipmentItemsRootObject.ShipmentItems.Add(shipmentItemToUpdate.ToDto());
 
             var json = JsonFieldsSerializer.Serialize(shipmentItemsRootObject, string.Empty);
 
@@ -366,42 +375,50 @@ namespace Nop.Plugin.Api.Controllers
             return new RawJsonActionResult("{}");
         }
 
-        private Product GetProduct(int? productId)
+        private OrderItem GetOrderItem(Order order, int? orderItemId)
         {
-            Product product = null;
+            OrderItem orderItem = null;
 
-            if (productId.HasValue)
+            if (orderItemId.HasValue)
             {
-                var id = productId.Value;
+                var id = orderItemId.Value;
 
-                product = _productApiService.GetProductById(id);
+                orderItem = _orderItemApiService.GetOrderItemById(order, orderItemId.Value);
             }
 
-            return product;
+            return orderItem;
         }
 
-        private ShipmentItem PrepareDefaultShipmentItemFromProduct(Shipment shipment, Product product)
+        private Order GetOrder(int? orderId)
         {
-            var presetQty = 1;
-            var presetPrice =
-                _priceCalculationService.GetFinalPrice(product, shipment.Customer, decimal.Zero, true, presetQty);
-
-            var presetPriceInclTax =
-                _taxService.GetProductPrice(product, presetPrice, true, shipment.Customer, out _);
-            var presetPriceExclTax =
-                _taxService.GetProductPrice(product, presetPrice, false, shipment.Customer, out _);
-
-            var shipmentItem = new OrderItem
+            Order order = null;
+            if (orderId.HasValue)
             {
-                OrderItemGuid = new Guid(),
-                UnitPriceExclTax = presetPriceExclTax,
-                UnitPriceInclTax = presetPriceInclTax,
-                PriceInclTax = presetPriceInclTax,
-                PriceExclTax = presetPriceExclTax,
-                OriginalProductCost = _priceCalculationService.GetProductCost(product, null),
-                Quantity = presetQty,
-                Product = product,
-                Order = shipment
+                var id = orderId.Value;
+
+                order = _orderApiService.GetOrderById(id);
+            }
+
+            return order;
+        }
+
+        private ShipmentItem PrepareDefaultShipmentItemFromProduct(Shipment shipment, OrderItem orderItem)
+        {
+            //var presetQty = 1;
+            //var presetPrice =
+            //    _priceCalculationService.GetFinalPrice(product, shipment.Customer, decimal.Zero, true, presetQty);
+
+            //var presetPriceInclTax =
+            //    _taxService.GetProductPrice(product, presetPrice, true, shipment.Customer, out _);
+            //var presetPriceExclTax =
+            //    _taxService.GetProductPrice(product, presetPrice, false, shipment.Customer, out _);
+
+            var shipmentItem = new ShipmentItem
+            {
+                OrderItemId = orderItem.Id,
+                Quantity = 0,
+                Shipment = shipment,
+                WarehouseId = 0
             };
 
             return shipmentItem;

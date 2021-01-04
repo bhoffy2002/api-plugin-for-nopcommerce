@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Nop.Plugin.Api.DTOs.Base;
+using Nop.Plugin.Api.DTOs.Orders;
+using Nop.Plugin.Api.DTOs.ShipmentItem;
 using Nop.Plugin.Api.DTOs.ShipmentItems;
 using Nop.Plugin.Api.Validators;
 
@@ -10,19 +12,19 @@ namespace Nop.Plugin.Api.DTOs.Shipments
     [JsonObject(Title = "shipment")]
     public class ShipmentDto : BaseDto
     {
-        private IColllection<ShipmentItemDto> _shipmentItems;
+        private ICollection<ShipmentItemDto> _shipmentItems;
 
         [JsonProperty("oder_id")]
         public int OrderId { get; set; }
 
-        [JsonPrperty("tracking_number")]
+        [JsonProperty("tracking_number")]
         public string TrackingNumber { get; set; }
 
         [JsonProperty("total_weight")]
         public decimal? TotalWeight { get; set; }
         
         [JsonProperty("shipped_date_utc")]
-        public DateTime? ShippedDateUTC { get; set; }
+        public DateTime? ShippedDateUtc { get; set; }
         
         [JsonProperty("delivery_date_utc")]
         public DateTime? DeliveryDateUtc { get; set; }

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Domain.Shipments;
+using Nop.Core.Domain.Shipping;
 using Nop.Plugin.Api.DataStructures;
 
 namespace Nop.Plugin.Api.Services

@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Nop.Core.Data;
 using Nop.Core.Domain.Orders;
-using Nop.Core.Domain.Shipments;
-using Nop.Core.Domain.Payments;
 using Nop.Core.Domain.Shipping;
+using Nop.Core.Domain.Payments;
 using Nop.Plugin.Api.Constants;
 using Nop.Plugin.Api.DataStructures;
 
@@ -15,7 +14,7 @@ namespace Nop.Plugin.Api.Services
     {
         private readonly IRepository<Shipment> _shipmentRepository;
 
-        public OrderApiService(IRepository<Shipment> shipmentRepository)
+        public ShipmentApiService(IRepository<Shipment> shipmentRepository)
         {
             _shipmentRepository = shipmentRepository;
         }
@@ -23,7 +22,7 @@ namespace Nop.Plugin.Api.Services
         public IList<Shipment> GetShipmentsByOrderId(int orderId)
         {
             var query = from shipment in _shipmentRepository.Table
-                        where shipment.OrderId == orderId && !shipmentId.Deleted
+                        where shipment.OrderId == orderId 
                         orderby shipment.Id
                         select shipment;
 
@@ -32,10 +31,9 @@ namespace Nop.Plugin.Api.Services
 
         public IList<Shipment> GetShipments(IList<int> ids = null, DateTime? createdAtMin = null, DateTime? createdAtMax = null,
            int limit = Configurations.DefaultLimit, int page = Configurations.DefaultPageValue, int sinceId = Configurations.DefaultSinceId, 
-           OrderStatus? status = null, PaymentStatus? paymentStatus = null, ShippingStatus? shippingStatus = null, int? orderId = null, 
-           int? storeId = null)
+           int? orderId = null, int? storeId = null)
         {
-            var query = GetShipmentsQuery(createdAtMin, createdAtMax, status, paymentStatus, shippingStatus, ids, orderId, storeId);
+            var query = GetShipmentsQuery(createdAtMin, createdAtMax, ids, orderId, storeId);
 
             if (sinceId > 0)
             {
@@ -45,26 +43,23 @@ namespace Nop.Plugin.Api.Services
             return new ApiList<Shipment>(query, page - 1, limit);
         }
 
-        public Order GetShipmentById(int shipmentId)
+        public Shipment GetShipmentById(int shipmentId)
         {
             if (shipmentId <= 0)
                 return null;
 
-            return _shipmentRepository.Table.FirstOrDefault(shipment => shipment.Id == shipmentId && !shipment.Deleted);
+            return _shipmentRepository.Table.FirstOrDefault(shipment => shipment.Id == shipmentId);
         }
 
-        public int GetOrdersCount(DateTime? createdAtMin = null, DateTime? createdAtMax = null, OrderStatus? status = null,
-                                 PaymentStatus? paymentStatus = null, ShippingStatus? shippingStatus = null,
-                                 int? shipmentId = null, int? storeId = null)
+        public int GetShipmentsCount(DateTime? createdAtMin = null, DateTime? createdAtMax = null, int? orderId = null, int? storeId = null)
         {
-            var query = GetShipmentsQuery(createdAtMin, createdAtMax, status, paymentStatus, shippingStatus, orderId: orderId, storeId: storeId);
+            var query = GetShipmentsQuery(createdAtMin, createdAtMax, orderId: orderId, storeId: storeId);
 
             return query.Count();
         }
 
-        private IQueryable<Order> GetShipmentsQuery(DateTime? createdAtMin = null, DateTime? createdAtMax = null, OrderStatus? status = null,
-            PaymentStatus? paymentStatus = null, ShippingStatus? shippingStatus = null, IList<int> ids = null, 
-            int? shipmentId = null, int? storeId = null)
+        private IQueryable<Shipment> GetShipmentsQuery(DateTime? createdAtMin = null, DateTime? createdAtMax = null, IList<int> ids = null, 
+            int? orderId = null, int? storeId = null)
         {
             var query = _shipmentRepository.Table;
             
@@ -93,7 +88,7 @@ namespace Nop.Plugin.Api.Services
             //    query = query.Where(order => order.ShippingStatusId == (int)shippingStatus);
             //}
 
-            query = query.Where(shipment => !shipment.Deleted);
+            //query = query.Where(shipment => !shipment.Deleted);
 
             if (createdAtMin != null)
             {
@@ -105,10 +100,10 @@ namespace Nop.Plugin.Api.Services
                 query = query.Where(shipment => shipment.CreatedOnUtc < createdAtMax.Value.ToUniversalTime());
             }
 
-            if (storeId != null)
-            {
-                query = query.Where(shipment => shipment.StoreId == storeId);
-            }
+            //if (storeId != null)
+            //{
+            //    query = query.Where(shipment => shipment.StoreId == storeId);
+            //}
 
             query = query.OrderBy(shipment => shipment.Id);
 

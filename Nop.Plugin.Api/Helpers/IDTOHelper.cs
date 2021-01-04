@@ -1,6 +1,7 @@
 ﻿using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Shipping;
 using Nop.Core.Domain.Stores;
 using Nop.Plugin.Api.DTOs.Categories;
 using Nop.Plugin.Api.DTOs.Languages;
@@ -11,6 +12,7 @@ using Nop.Plugin.Api.DTOs.ShipmentItems;
 using Nop.Plugin.Api.DTOs.Shipments;
 using Nop.Plugin.Api.DTOs.ProductAttributes;
 using Nop.Plugin.Api.DTOs.Products;
+using Nop.Plugin.Api.DTOs.ShipmentItem;
 using Nop.Plugin.Api.DTOs.ShoppingCarts;
 using Nop.Plugin.Api.DTOs.SpecificationAttributes;
 using Nop.Plugin.Api.DTOs.Stores;

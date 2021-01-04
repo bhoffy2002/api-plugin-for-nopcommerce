@@ -1,6 +1,7 @@
-﻿using Nop.Core.Domain.Shipments;
+﻿using Nop.Core.Domain.Shipping;
 using Nop.Plugin.Api.AutoMapper;
 using Nop.Plugin.Api.DTOs.Orders;
+using Nop.Plugin.Api.DTOs.Shipments;
 
 namespace Nop.Plugin.Api.MappingExtensions
 {
@@ -8,7 +9,7 @@ namespace Nop.Plugin.Api.MappingExtensions
     {
         public static ShipmentDto ToDto(this Shipment shipment)
         {
-            return shipment.Map<Shipment, ShipmentDto>();
+            return shipment.MapTo<Shipment, ShipmentDto>();
         }
     }
 }

@@ -20,5 +20,10 @@ namespace Nop.Plugin.Api.Services
 
             return orderItemsCount;
         }
+
+        public OrderItem GetOrderItemById(Order order, int id)
+        {
+            return order.OrderItems.AsQueryable().SingleOrDefault(x => x.Id == id);
+        }
     }
 }

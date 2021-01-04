@@ -1,0 +1,4 @@
+C:\Users\MarathonConsultant\Downloads\nopCommerce_4.20_Source\src\Plugins\Nop.Plugin.Api\obj\Debug\netcoreapp2.2\Nop.Plugin.Api.csprojAssemblyReference.cache
+C:\Users\MarathonConsultant\Downloads\nopCommerce_4.20_Source\src\Plugins\Nop.Plugin.Api\obj\Debug\netcoreapp2.2\Nop.Plugin.Api.AssemblyInfoInputs.cache
+C:\Users\MarathonConsultant\Downloads\nopCommerce_4.20_Source\src\Plugins\Nop.Plugin.Api\obj\Debug\netcoreapp2.2\Nop.Plugin.Api.AssemblyInfo.cs
+C:\Users\MarathonConsultant\Downloads\nopCommerce_4.20_Source\src\Plugins\Nop.Plugin.Api\obj\Debug\netcoreapp2.2\Nop.Plugin.Api.csproj.CoreCompileInputs.cache

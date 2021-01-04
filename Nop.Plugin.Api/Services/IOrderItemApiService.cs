@@ -7,5 +7,7 @@ namespace Nop.Plugin.Api.Services
     {
         IList<OrderItem> GetOrderItemsForOrder(Order order, int limit, int page, int sinceId);
         int GetOrderItemsCount(Order order);
+
+        OrderItem GetOrderItemById(Order order, int id);
     }
 }

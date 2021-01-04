@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Nop.Plugin.Api.DTOs.ShipmentItem;
 
 
 namespace Nop.Plugin.Api.DTOs.ShipmentItems
 {
 
-    public class ShipmentItemsRootObject
+    public class ShipmentItemsRootObject : ISerializableObject
     {
         public ShipmentItemsRootObject()
         {
